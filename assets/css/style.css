@@ -324,7 +324,7 @@ main.home { --container: 1360px; }
   .home .proj-wide { grid-template-columns: 1fr; }
   .home .proj-wide .thumb { order: 0; border-left: 0; border-bottom: 1px solid var(--line); }
 }
-.home .cards-2 .proj .thumb img { inset: auto 0; top: -3.5%; height: 106%; }
+.home .cards-2 .proj .thumb img.crop-bars { inset: auto 0; top: -3.5%; height: 106%; }
 .home .feature .media { padding: 0; min-height: 0; display: flex; align-items: center; background: #0b0d11; }
 .home .feature .media img { display: block; width: 100%; height: auto; }
 .not-found { padding: 80px 0 40px; background: radial-gradient(900px 320px at 50% -10%, rgba(122, 167, 255, 0.10), transparent 70%); }
