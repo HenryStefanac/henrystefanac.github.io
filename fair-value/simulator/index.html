@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prop Firm Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        html { height: 100%; }
+        input[type=range] { accent-color: #3b82f6; }
+        .toggle-btn.active { background-color: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
+        .toggle-btn { background-color: transparent; border-color: transparent; color: #4b5563; }
+        .app-three-col {
+            display: grid;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            gap: 1rem 1.25rem;
+            align-items: stretch;
+            grid-template-columns: minmax(300px, 1.15fr) minmax(260px, 0.85fr) minmax(300px, 1fr);
+        }
+        @media (min-width: 1536px) {
+            .app-three-col { gap: 1.5rem; }
+        }
+        .app-col-scroll {
+            min-height: 0;
+            height: 100%;
+            max-height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-dvh max-h-dvh w-full box-border overflow-hidden flex flex-col p-4 sm:p-6 font-sans text-gray-800">
+
+    <div class="flex-1 min-h-0 w-full max-w-full overflow-x-auto overflow-y-hidden">
+    <div class="app-three-col min-w-[920px]">
+    <div class="bg-white rounded-2xl shadow-xl w-full min-w-0 min-h-0 h-full p-5 sm:p-6 border-x border-gray-100 app-col-scroll">
+        
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-xl font-bold text-gray-900 mb-2">Prop Firm Simulator</h1>
+                
+                <div class="flex items-center gap-2">
+                    <select id="profile-select" onchange="loadSelectedProfile()" class="text-xs border border-gray-300 rounded-md py-1 pl-2 pr-6 bg-white focus:ring-blue-500 focus:border-blue-500 max-w-[150px]">
+                        <option value="">-- Select Profile --</option>
+                    </select>
+                    <button onclick="promptSaveProfile()" class="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 px-2 py-1 rounded-md font-medium transition-colors" title="Save current settings as a new profile">
+                        Save As+
+                    </button>
+                    <button onclick="deleteSelectedProfile()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-2 py-1 rounded-md font-medium transition-colors" title="Delete selected profile">
+                        Delete
+                    </button>
+                </div>
+
+            </div>
+            <div class="flex gap-6 text-sm">
+                <div>
+                    <p class="text-gray-500 font-semibold uppercase text-xs">Surviving</p>
+                    <p id="stat-surviving" class="text-lg font-bold">0</p>
+                </div>
+                <div>
+                    <p class="text-gray-500 font-semibold uppercase text-xs">Blown</p>
+                    <p id="stat-blown" class="text-lg font-bold">0</p>
+                </div>
+                <div>
+                    <p class="text-gray-500 font-semibold uppercase text-xs">Total PNL</p>
+                    <p id="stat-pnl" class="text-lg font-bold">$0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative w-full mb-6 border border-gray-100 rounded-xl bg-slate-50 p-2 h-[min(38vh,400px)] min-h-[200px] max-h-[55vh]">
+            <canvas id="simChart"></canvas>
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-5 border border-gray-100">
+            <div class="grid grid-cols-2 gap-6 mb-4">
+                <div class="flex items-center gap-4">
+                    <label class="w-24 text-sm text-gray-700">Accounts</label>
+                    <input type="range" id="accounts-slider" min="1" max="30" value="1" class="flex-1">
+                    <input type="number" id="accounts" value="1" class="w-16 p-1 text-center border rounded-lg text-sm bg-white">
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="w-28 text-sm text-gray-700">Total Trades</label>
+                    <input type="range" id="trades-slider" min="5" max="2500" value="10" step="5" class="flex-1">
+                    <input type="number" id="totalTrades" value="10" class="w-20 p-1 text-center border rounded-lg text-sm bg-white">
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="w-32 text-sm text-gray-700">Profit Target ($)</label>
+                    <input type="number" id="pt" value="300" class="flex-1 p-2 border rounded-lg text-sm bg-white">
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="w-32 text-sm text-gray-700">Stop Loss ($)</label>
+                    <input type="number" id="sl" value="500" class="flex-1 p-2 border rounded-lg text-sm bg-white">
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="w-32 text-sm text-gray-700">Max Drawdown ($)</label>
+                    <input type="number" id="maxDrawdown" value="1000" class="flex-1 p-2 border rounded-lg text-sm bg-white">
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="w-32 text-sm text-gray-700">Trailing Stop Cap ($)</label>
+                    <input type="number" id="trailingCap" value="0" class="flex-1 p-2 border rounded-lg text-sm bg-white">
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="w-32 text-sm text-gray-700">Commission / trade ($)</label>
+                    <input type="number" id="commission" value="3.50" min="0" step="0.01" class="flex-1 p-2 border rounded-lg text-sm bg-white">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-gray-200 mt-2">
+                <div class="flex items-center gap-4">
+                    <label class="text-sm text-gray-700 mr-2">Drawdown Rule</label>
+                    <div class="flex bg-gray-200 rounded-lg p-1">
+                        <button id="btn-intraday" class="toggle-btn active text-sm px-4 py-1.5 rounded-md font-medium border transition-all" onclick="setRule('intraday')">Intraday</button>
+                        <button id="btn-eod" class="toggle-btn text-sm px-4 py-1.5 rounded-md font-medium transition-all" onclick="setRule('eod')">EOD</button>
+                    </div>
+                </div>
+                <button onclick="runSimulation()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-12 py-2 rounded-full font-semibold transition-all">
+                    Run Simulation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="bg-white rounded-2xl shadow-xl w-full min-w-0 min-h-0 h-full border-x border-gray-100 flex flex-col app-col-scroll self-stretch">
+        <div class="p-4 pb-3">
+        <h2 class="text-base font-bold text-gray-900 mb-2">Expenses</h2>
+        <div class="grid grid-cols-2 gap-3 text-xs border-b border-gray-100 pb-3 mb-3">
+            <div class="min-w-0 pr-2 border-r border-gray-100">
+                <p class="text-gray-600 font-semibold mb-2 text-[11px] uppercase tracking-wide">Evals</p>
+                <div class="space-y-2">
+                    <div>
+                        <label class="block text-[10px] text-gray-500 mb-0.5" for="accounting-eval-qty">Qty</label>
+                        <input type="number" id="accounting-eval-qty" value="0" min="0" step="1" class="w-full px-1.5 py-1 text-xs border border-gray-200 rounded-md bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-500 mb-0.5" for="accounting-eval-price">$ each</label>
+                        <input type="number" id="accounting-eval-price" value="0" min="0" step="0.01" class="w-full px-1.5 py-1 text-xs border border-gray-200 rounded-md bg-white">
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-2">Subtotal <span id="accounting-eval-subtotal" class="font-semibold text-gray-800">$0</span></p>
+            </div>
+            <div class="min-w-0 pl-1">
+                <p class="text-gray-600 font-semibold mb-2 text-[11px] uppercase tracking-wide">Fundeds</p>
+                <div class="space-y-2">
+                    <div>
+                        <label class="block text-[10px] text-gray-500 mb-0.5" for="accounting-funded-qty">Qty</label>
+                        <input type="number" id="accounting-funded-qty" value="0" min="0" step="1" class="w-full px-1.5 py-1 text-xs border border-gray-200 rounded-md bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-500 mb-0.5" for="accounting-funded-price">$ each</label>
+                        <input type="number" id="accounting-funded-price" value="0" min="0" step="0.01" class="w-full px-1.5 py-1 text-xs border border-gray-200 rounded-md bg-white">
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-2">Subtotal <span id="accounting-funded-subtotal" class="font-semibold text-gray-800">$0</span></p>
+            </div>
+        </div>
+        <div class="space-y-3 text-xs">
+            <div class="pt-1 border-t border-gray-200">
+                <p class="text-gray-500 font-semibold uppercase text-[10px]">Total expenses</p>
+                <p id="accounting-total-expenses" class="text-lg font-bold text-gray-900 mt-0.5">$0</p>
+            </div>
+            <div class="pt-3 border-t border-gray-200">
+                <p class="text-gray-500 font-semibold uppercase text-[10px]">Payouts received (last run)</p>
+                <div id="accounting-payout-breakdown" class="mt-1.5 space-y-1 min-h-[1rem] text-[11px] text-gray-600"></div>
+                <p class="text-gray-500 font-semibold uppercase text-[10px] mt-2">Total payouts</p>
+                <p id="accounting-sim-payout-total" class="text-base font-bold text-gray-900">$0</p>
+            </div>
+            <div class="pt-3 border-t border-gray-200">
+                <p class="text-gray-500 font-semibold uppercase text-[10px]">Net P&amp;L</p>
+                <p class="text-[10px] text-gray-500 mb-0.5">Payouts received − total expenses</p>
+                <p id="accounting-net-pnl" class="text-lg font-bold mt-0.5 text-gray-900">$0</p>
+            </div>
+        </div>
+        </div>
+        <div class="border-t border-amber-200 bg-amber-50/60 p-6 pt-4 mt-auto">
+            <h3 class="text-sm font-bold text-gray-900 mb-1">Payouts (simulation)</h3>
+            <p class="text-xs text-gray-600 mb-3">After each trade, if all enabled rules pass, one payout is applied and equity drops by the payout amount. Each chart step is one &ldquo;day.&rdquo;</p>
+            <div class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1" for="payout-threshold">PnL to qualify ($)</label>
+                    <input type="number" id="payout-threshold" value="2000" min="0" step="1" class="w-full p-2 border border-amber-200 rounded-lg text-sm bg-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1" for="payout-amount">Payout amount ($)</label>
+                    <input type="number" id="payout-amount" value="1000" min="0" step="1" class="w-full p-2 border border-amber-200 rounded-lg text-sm bg-white">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1" for="payout-required-winning-days">Winning days between payouts</label>
+                        <input type="number" id="payout-required-winning-days" value="5" min="0" step="1" class="w-full p-2 border border-amber-200 rounded-lg text-sm bg-white" title="0 = no requirement. Counts days (trades) since last payout where net PnL for that day clears the minimum below.">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1" for="payout-winning-day-min-dollars">Min $ winning day</label>
+                        <input type="number" id="payout-winning-day-min-dollars" value="100" min="0" step="1" class="w-full p-2 border border-amber-200 rounded-lg text-sm bg-white" title="That day’s net (after commission) must be at least this much and positive to count as a winning day.">
+                    </div>
+                </div>
+                <label class="flex items-start gap-2 cursor-pointer text-xs text-gray-700 leading-snug">
+                    <input type="checkbox" id="payout-profitable-since" checked class="mt-0.5 rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                    <span><span class="font-medium text-gray-800">Profitable since last payout</span> — after a payout, the next payout only when balance has recovered the <em>last</em> withdrawal plus at least $1. Example: balance $3,000, you withdraw $500 → $2,500 left on the account; next payout is allowed once balance reaches <strong>$3,001</strong> (that $500 back, plus $1).</span>
+                </label>
+            </div>
+        </div>
+    </aside>
+
+    <section class="bg-white rounded-2xl shadow-xl w-full min-w-0 min-h-0 h-full p-5 sm:p-6 border-x border-gray-100 self-stretch app-col-scroll">
+        <h2 class="text-xl font-bold text-gray-900 mb-1">Monte Carlo Simulation</h2>
+        <p class="text-sm text-gray-600 mb-4">Runs the same simulation many times using your current parameters (left panel), drawdown rule, expenses, and payout rules. Totals use <strong>payouts received − total expenses</strong> per run, then averages across runs.</p>
+        <div class="flex flex-wrap items-end gap-4 mb-6">
+            <div>
+                <label class="block text-xs text-gray-600 mb-1" for="bulk-run-count">Number of runs</label>
+                <input type="number" id="bulk-run-count" value="100" min="1" max="20000" step="1" class="w-32 p-2 border rounded-lg text-sm bg-white">
+            </div>
+            <button type="button" onclick="runBulkSimulation()" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-8 py-2 rounded-full font-semibold text-sm transition-all">
+                Run Monte Carlo Simulation
+            </button>
+        </div>
+        <div class="space-y-5 text-sm">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 rounded-xl p-4 border border-gray-100">
+                        <p class="text-gray-500 font-semibold uppercase text-xs">Avg. total payouts per run</p>
+                        <p id="bulk-avg-payout-per-run" class="text-2xl font-bold text-gray-900 mt-1">—</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-4 border border-gray-100">
+                        <p class="text-gray-500 font-semibold uppercase text-xs">Avg. net P&amp;L per run</p>
+                        <p id="bulk-avg-net-per-run" class="text-2xl font-bold text-gray-900 mt-1">—</p>
+                    </div>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-4 border border-gray-100">
+                    <p class="text-gray-500 font-semibold uppercase text-xs mb-2">Accounts by payout count</p>
+                    <ul class="space-y-2 text-gray-800 text-xs">
+                        <li class="flex justify-between border-b pb-1 border-gray-200"><span>0 payouts</span><span id="bulk-pct-0" class="font-semibold tabular-nums">—</span></li>
+                        <li class="flex justify-between border-b pb-1 border-gray-200"><span>1 payout</span><span id="bulk-pct-1" class="font-semibold tabular-nums">—</span></li>
+                        <li class="flex justify-between border-b pb-1 border-gray-200"><span>2 payouts</span><span id="bulk-pct-2" class="font-semibold tabular-nums">—</span></li>
+                        <li class="flex justify-between"><span>3+ payouts</span><span id="bulk-pct-3plus" class="font-semibold tabular-nums">—</span></li>
+                    </ul>
+                </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            <h2 class="text-lg font-bold text-gray-900 mb-1">Optimization Heatmap</h2>
+            <p class="text-xs text-gray-600 mb-4">Averages Net P&amp;L across Monte Carlo simulations for a grid of Profit Target (Y) and Stop Loss (X) combinations.</p>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="space-y-2">
+                    <p class="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Stop Loss (X-Axis)</p>
+                    <div class="flex gap-2">
+                        <input type="number" id="hm-sl-min" value="100" class="w-full p-2 border rounded-lg text-xs bg-white" placeholder="Min">
+                        <input type="number" id="hm-sl-max" value="1000" class="w-full p-2 border rounded-lg text-xs bg-white" placeholder="Max">
+                        <input type="number" id="hm-sl-step" value="100" class="w-full p-2 border rounded-lg text-xs bg-white" placeholder="Step">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <p class="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Profit Target (Y-Axis)</p>
+                    <div class="flex gap-2">
+                        <input type="number" id="hm-pt-min" value="100" class="w-full p-2 border rounded-lg text-xs bg-white" placeholder="Min">
+                        <input type="number" id="hm-pt-max" value="1000" class="w-full p-2 border rounded-lg text-xs bg-white" placeholder="Max">
+                        <input type="number" id="hm-pt-step" value="100" class="w-full p-2 border rounded-lg text-xs bg-white" placeholder="Step">
+                    </div>
+                </div>
+            </div>
+            
+            <button type="button" onclick="generateHeatmap()" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-8 py-2 rounded-full font-semibold text-sm transition-all mb-4 w-full">
+                Generate Heatmap
+            </button>
+            
+            <div id="heatmap-container" class="w-full overflow-x-auto pb-4">
+                </div>
+        </div>
+
+    </section>
+    </div>
+    </div>
+
+    <script>
+        let simChart = null;
+        let isEOD = false;
+        let lastSimAccounts = [];
+
+        let profiles = JSON.parse(localStorage.getItem('propFirmProfiles')) || {};
+
+        const presetProfiles = {
+            '0 EV': {
+                accounts: 5, totalTrades: 1000, pt: 10, sl: 10,
+                maxDrawdown: 2500, trailingCap: 0, commission: 0, isEOD: true,
+                evalQty: 0, evalPrice: 0, fundedQty: 0, fundedPrice: 0
+            },
+            'Run 1': {
+                accounts: 29, totalTrades: 2500, pt: 600, sl: 700,
+                maxDrawdown: 2500, trailingCap: 100, commission: 3.98, isEOD: false,
+                evalQty: 70, evalPrice: 19.70, fundedQty: 29, fundedPrice: 75.00,
+                payoutThreshold: 4100, payoutAmount: 2000, payoutReqWinDays: 8, payoutWinDayMin: 100,
+                payoutProfitableSince: false
+            },
+            'Run 2': {
+                accounts: 20, totalTrades: 2500, pt: 600, sl: 700,
+                maxDrawdown: 2500, trailingCap: 100, commission: 3.98, isEOD: false,
+                evalQty: 58, evalPrice: 24.90, fundedQty: 18, fundedPrice: 99.00,
+                payoutThreshold: 3600, payoutAmount: 1500, payoutReqWinDays: 5, payoutWinDayMin: 150,
+                payoutProfitableSince: false
+            }
+        };
+
+        function updateProfileSelect() {
+            const sel = document.getElementById('profile-select');
+            sel.innerHTML = '<option value="">-- Select Profile --</option>';
+            for(let name in presetProfiles) {
+                let opt = document.createElement('option');
+                opt.value = name;
+                opt.innerText = name;
+                sel.appendChild(opt);
+            }
+            for(let name in profiles) {
+                if(presetProfiles[name]) continue;
+                let opt = document.createElement('option');
+                opt.value = name;
+                opt.innerText = name;
+                sel.appendChild(opt);
+            }
+        }
+
+        function getCurrentConfig() {
+            return {
+                accounts: document.getElementById('accounts').value,
+                totalTrades: document.getElementById('totalTrades').value,
+                pt: document.getElementById('pt').value,
+                sl: document.getElementById('sl').value,
+                maxDrawdown: document.getElementById('maxDrawdown').value,
+                trailingCap: document.getElementById('trailingCap').value,
+                commission: document.getElementById('commission').value,
+                isEOD: isEOD,
+                
+                evalQty: document.getElementById('accounting-eval-qty').value,
+                evalPrice: document.getElementById('accounting-eval-price').value,
+                fundedQty: document.getElementById('accounting-funded-qty').value,
+                fundedPrice: document.getElementById('accounting-funded-price').value,
+                
+                payoutThreshold: document.getElementById('payout-threshold').value,
+                payoutAmount: document.getElementById('payout-amount').value,
+                payoutReqWinDays: document.getElementById('payout-required-winning-days').value,
+                payoutWinDayMin: document.getElementById('payout-winning-day-min-dollars').value,
+                payoutProfitableSince: document.getElementById('payout-profitable-since').checked,
+
+                hmSlMin: document.getElementById('hm-sl-min').value,
+                hmSlMax: document.getElementById('hm-sl-max').value,
+                hmSlStep: document.getElementById('hm-sl-step').value,
+                hmPtMin: document.getElementById('hm-pt-min').value,
+                hmPtMax: document.getElementById('hm-pt-max').value,
+                hmPtStep: document.getElementById('hm-pt-step').value,
+                bulkRunCount: document.getElementById('bulk-run-count').value
+            };
+        }
+
+        function applyConfig(cfg) {
+            if(!cfg) return;
+
+            const val = (v, d) => (v === undefined || v === null || v === '') ? d : v;
+
+            document.getElementById('accounts').value = val(cfg.accounts, 1);
+            document.getElementById('accounts-slider').value = val(cfg.accounts, 1);
+            document.getElementById('totalTrades').value = val(cfg.totalTrades, 10);
+            document.getElementById('trades-slider').value = val(cfg.totalTrades, 10);
+            document.getElementById('pt').value = val(cfg.pt, 300);
+            document.getElementById('sl').value = val(cfg.sl, 500);
+            document.getElementById('maxDrawdown').value = val(cfg.maxDrawdown, 1000);
+            document.getElementById('trailingCap').value = val(cfg.trailingCap, 0);
+            document.getElementById('commission').value = val(cfg.commission, 3.50);
+
+            setRule(cfg.isEOD ? 'eod' : 'intraday');
+
+            document.getElementById('accounting-eval-qty').value = val(cfg.evalQty, 0);
+            document.getElementById('accounting-eval-price').value = val(cfg.evalPrice, 0);
+            document.getElementById('accounting-funded-qty').value = val(cfg.fundedQty, 0);
+            document.getElementById('accounting-funded-price').value = val(cfg.fundedPrice, 0);
+
+            document.getElementById('payout-threshold').value = val(cfg.payoutThreshold, 2000);
+            document.getElementById('payout-amount').value = val(cfg.payoutAmount, 1000);
+            document.getElementById('payout-required-winning-days').value = val(cfg.payoutReqWinDays, 5);
+            document.getElementById('payout-winning-day-min-dollars').value = val(cfg.payoutWinDayMin, 100);
+            document.getElementById('payout-profitable-since').checked = val(cfg.payoutProfitableSince, true);
+
+            document.getElementById('hm-sl-min').value = val(cfg.hmSlMin, 100);
+            document.getElementById('hm-sl-max').value = val(cfg.hmSlMax, 1000);
+            document.getElementById('hm-sl-step').value = val(cfg.hmSlStep, 100);
+            document.getElementById('hm-pt-min').value = val(cfg.hmPtMin, 100);
+            document.getElementById('hm-pt-max').value = val(cfg.hmPtMax, 1000);
+            document.getElementById('hm-pt-step').value = val(cfg.hmPtStep, 100);
+            document.getElementById('bulk-run-count').value = val(cfg.bulkRunCount, 100);
+
+            document.getElementById('accounting-eval-qty').dispatchEvent(new Event('input'));
+            
+            runSimulation();
+        }
+
+        function promptSaveProfile() {
+            let name = prompt("Enter a name for this profile (e.g., 'Topstep 50k', 'Apex 100k'):");
+            if(name && name.trim() !== '') {
+                name = name.trim();
+                if(presetProfiles[name]) {
+                    alert(`'${name}' is a built-in profile. Pick another name.`);
+                    return;
+                }
+                profiles[name] = getCurrentConfig();
+                localStorage.setItem('propFirmProfiles', JSON.stringify(profiles));
+                updateProfileSelect();
+                document.getElementById('profile-select').value = name;
+            }
+        }
+
+        function loadSelectedProfile() {
+            let name = document.getElementById('profile-select').value;
+            if(name && presetProfiles[name]) {
+                applyConfig(presetProfiles[name]);
+            } else if(name && profiles[name]) {
+                applyConfig(profiles[name]);
+            }
+        }
+
+        function deleteSelectedProfile() {
+            let name = document.getElementById('profile-select').value;
+            if(!name) {
+                alert("Please select a profile to delete.");
+                return;
+            }
+            if(presetProfiles[name]) {
+                alert("Built-in profiles can't be deleted.");
+                return;
+            }
+            if(confirm(`Are you sure you want to delete the profile '${name}'?`)) {
+                delete profiles[name];
+                localStorage.setItem('propFirmProfiles', JSON.stringify(profiles));
+                updateProfileSelect();
+            }
+        }
+
+        function formatAccountingMoney(n) {
+            const v = Number.isFinite(n) ? n : 0;
+            return '$' + v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function readExpenseTotalFromForm() {
+            const ev = parseInt(document.getElementById('accounting-eval-qty').value, 10);
+            const ep = parseFloat(document.getElementById('accounting-eval-price').value);
+            const fv = parseInt(document.getElementById('accounting-funded-qty').value, 10);
+            const fp = parseFloat(document.getElementById('accounting-funded-price').value);
+            const evalTotal = (Number.isFinite(ev) && ev > 0 ? ev : 0) * (Number.isFinite(ep) && ep > 0 ? ep : 0);
+            const fundedTotal = (Number.isFinite(fv) && fv > 0 ? fv : 0) * (Number.isFinite(fp) && fp > 0 ? fp : 0);
+            return evalTotal + fundedTotal;
+        }
+
+        function updateSimulationPayoutAccounting(accounts) {
+            const list = accounts || [];
+            const byAcc = list.map(function(acc) {
+                const total = (acc.payouts || []).reduce(function(s, p) { return s + (p.amount || 0); }, 0);
+                return { id: acc.id, total: total, count: (acc.payouts || []).length };
+            });
+            const grand = byAcc.reduce(function(s, a) { return s + a.total; }, 0);
+            const br = document.getElementById('accounting-payout-breakdown');
+            const rows = byAcc.filter(function(a) { return a.total > 0; }).map(function(a) {
+                return '<div class="flex justify-between gap-2"><span>Acc ' + a.id + '</span><span class="font-semibold text-gray-800 tabular-nums">' + formatAccountingMoney(a.total) + '</span></div>';
+            });
+            br.innerHTML = rows.length ? rows.join('') : '<p class="text-gray-400">No payouts in this run.</p>';
+            document.getElementById('accounting-sim-payout-total').innerText = formatAccountingMoney(grand);
+            const expenses = readExpenseTotalFromForm();
+            const net = grand - expenses;
+            const netEl = document.getElementById('accounting-net-pnl');
+            netEl.innerText = formatAccountingMoney(net);
+            netEl.className = 'text-lg font-bold mt-0.5 ' + (net >= 0 ? 'text-emerald-700' : 'text-red-700');
+        }
+
+        function syncElements(sliderId, inputId) {
+            const slider = document.getElementById(sliderId);
+            const input = document.getElementById(inputId);
+            slider.addEventListener('input', () => input.value = slider.value);
+            input.addEventListener('input', () => slider.value = input.value);
+        }
+
+        syncElements('accounts-slider', 'accounts');
+        syncElements('trades-slider', 'totalTrades');
+
+        function setRule(rule) {
+            isEOD = (rule === 'eod');
+            document.getElementById('btn-eod').className = isEOD ? 'toggle-btn active text-sm px-4 py-1.5 rounded-md font-medium border transition-all' : 'toggle-btn text-sm px-4 py-1.5 rounded-md font-medium transition-all';
+            document.getElementById('btn-intraday').className = !isEOD ? 'toggle-btn active text-sm px-4 py-1.5 rounded-md font-medium border transition-all' : 'toggle-btn text-sm px-4 py-1.5 rounded-md font-medium transition-all';
+        }
+
+        const predefinedColors = ['#2563eb', '#16a34a', '#d97706', '#9333ea', '#dc2626'];
+
+        function runSimulationCore(overrides = {}) {
+            const accountsCount = overrides.accounts !== undefined ? overrides.accounts : parseInt(document.getElementById('accounts').value);
+            const totalTrades = overrides.totalTrades !== undefined ? overrides.totalTrades : parseInt(document.getElementById('totalTrades').value);
+            const pt = overrides.pt !== undefined ? overrides.pt : parseFloat(document.getElementById('pt').value);
+            const sl = overrides.sl !== undefined ? overrides.sl : parseFloat(document.getElementById('sl').value);
+            const maxDrawdown = overrides.maxDrawdown !== undefined ? overrides.maxDrawdown : parseFloat(document.getElementById('maxDrawdown').value);
+            const trailingCap = overrides.trailingCap !== undefined ? overrides.trailingCap : parseFloat(document.getElementById('trailingCap').value);
+            const commission = Math.max(0, parseFloat(document.getElementById('commission').value) || 0);
+            
+            const payoutThreshold = Math.max(0, parseFloat(document.getElementById('payout-threshold').value) || 0);
+            const payoutAmount = Math.max(0, parseFloat(document.getElementById('payout-amount').value) || 0);
+            const payoutRequiredWinningDays = Math.max(0, parseInt(document.getElementById('payout-required-winning-days').value, 10) || 0);
+            const payoutWinDayMinDollars = Math.max(0, parseFloat(document.getElementById('payout-winning-day-min-dollars').value) || 0);
+            const payoutProfitableSince = document.getElementById('payout-profitable-since').checked;
+
+            const winRate = sl / (pt + sl);
+
+            let accounts = Array.from({length: accountsCount}, (_, i) => ({
+                id: i + 1,
+                balance: 0,
+                highWaterMark: 0,
+                isActive: true,
+                trailingStop: -maxDrawdown,
+                history: [{x: 0, y: 0, stop: -maxDrawdown, peak: 0, trough: 0}],
+                color: predefinedColors[i % predefinedColors.length],
+                blownAt: null,
+                payouts: [],
+                winningDaysSinceLastPayout: 0,
+                balanceAfterLastPayout: null,
+                lastPayoutWithdrawalAmount: 0
+            }));
+
+            let activeAccounts = [...accounts];
+            let tradeCounter = 1;
+
+            for(let i = 0; i < totalTrades; i++) {
+                if(activeAccounts.length === 0) break;
+
+                let acc = activeAccounts[i % activeAccounts.length];
+
+                let pnl, mfe, mae;
+                if(Math.random() < winRate) {
+                    pnl = pt;
+                    mfe = pt;
+                    mae = Math.random() * sl;
+                } else {
+                    pnl = -sl;
+                    mfe = Math.random() * pt;
+                    mae = sl;
+                }
+
+                let tradePeak = acc.balance + mfe;
+                let tradeTrough = acc.balance - mae;
+
+                if(!isEOD) {
+                    if(tradePeak > acc.highWaterMark) acc.highWaterMark = tradePeak;
+                    
+                    let newStop = acc.highWaterMark - maxDrawdown;
+                    if(newStop > acc.trailingStop) {
+                        acc.trailingStop = Math.min(newStop, trailingCap);
+                    }
+
+                    if(tradeTrough <= acc.trailingStop) {
+                        acc.isActive = false;
+                        acc.balance = acc.trailingStop - commission;
+                    } else {
+                        acc.balance += pnl - commission;
+                    }
+                } else {
+                    if(tradeTrough <= acc.trailingStop) {
+                        acc.isActive = false;
+                        acc.balance = acc.trailingStop - commission;
+                    } else {
+                        acc.balance += pnl - commission;
+                        if(acc.balance > acc.highWaterMark) acc.highWaterMark = acc.balance;
+                        
+                        let newStop = acc.highWaterMark - maxDrawdown;
+                        if(newStop > acc.trailingStop) {
+                            acc.trailingStop = Math.min(newStop, trailingCap);
+                        }
+                    }
+                }
+
+                const histBase = { stop: acc.trailingStop, peak: tradePeak, trough: tradeTrough };
+
+                if(acc.isActive) {
+                    const tradeNet = pnl - commission;
+                    if(tradeNet > 0 && tradeNet >= payoutWinDayMinDollars) {
+                        acc.winningDaysSinceLastPayout++;
+                    }
+                }
+
+                let payoutThisStep = false;
+                if(acc.isActive && payoutThreshold > 0 && payoutAmount > 0 && acc.balance >= payoutThreshold) {
+                    let ok = true;
+                    if(payoutRequiredWinningDays > 0 && acc.winningDaysSinceLastPayout < payoutRequiredWinningDays) ok = false;
+                    if(ok && payoutProfitableSince && acc.balanceAfterLastPayout !== null) {
+                        const recover = (acc.lastPayoutWithdrawalAmount || 0) + 1;
+                        if(acc.balance < acc.balanceAfterLastPayout + recover) ok = false;
+                    }
+                    payoutThisStep = ok;
+                }
+
+                if(!acc.isActive) {
+                    acc.history.push({ x: tradeCounter, y: acc.balance, ...histBase });
+                } else if(payoutThisStep) {
+                    const yBeforePayout = acc.balance;
+                    acc.history.push({ x: tradeCounter, y: yBeforePayout, ...histBase });
+                    
+                    acc.balance -= payoutAmount;
+                    acc.payouts.push({
+                        x: tradeCounter,
+                        yBefore: yBeforePayout,
+                        yAfter: acc.balance,
+                        amount: payoutAmount
+                    });
+                    
+                    acc.balanceAfterLastPayout = acc.balance;
+                    acc.lastPayoutWithdrawalAmount = payoutAmount;
+                    acc.winningDaysSinceLastPayout = 0;
+                    acc.history.push({ x: tradeCounter, y: acc.balance, ...histBase });
+                } else {
+                    acc.history.push({ x: tradeCounter, y: acc.balance, ...histBase });
+                }
+
+                if(!acc.isActive) {
+                    acc.blownAt = {x: tradeCounter, y: acc.balance};
+                    activeAccounts = activeAccounts.filter(a => a.id !== acc.id);
+                }
+                
+                tradeCounter++;
+            }
+
+            return accounts;
+        }
+
+        function runSimulation() {
+            updateUI(runSimulationCore());
+        }
+
+        function runBulkSimulation() {
+            let n = parseInt(document.getElementById('bulk-run-count').value, 10);
+            if(!Number.isFinite(n) || n < 1) n = 1;
+            if(n > 20000) n = 20000;
+
+            const expenses = readExpenseTotalFromForm();
+
+            let sumPayoutPerRun = 0;
+            let sumNetPerRun = 0;
+            let c0 = 0, c1 = 0, c2 = 0, c3p = 0;
+            let lastAccounts = null;
+            let totalAccRuns = 0;
+
+            for(let r = 0; r < n; r++) {
+                const accounts = runSimulationCore();
+                lastAccounts = accounts;
+                totalAccRuns += accounts.length;
+                let runPayoutTotal = 0;
+                for(let a = 0; a < accounts.length; a++) {
+                    const plist = accounts[a].payouts || [];
+                    for(let j = 0; j < plist.length; j++) {
+                        runPayoutTotal += plist[j].amount || 0;
+                    }
+                    const pc = plist.length;
+                    if(pc === 0) c0++;
+                    else if(pc === 1) c1++;
+                    else if(pc === 2) c2++;
+                    else c3p++;
+                }
+                sumPayoutPerRun += runPayoutTotal;
+                sumNetPerRun += runPayoutTotal - expenses;
+            }
+            const pct = function(count) {
+                return totalAccRuns > 0 ? ((100 * count) / totalAccRuns).toFixed(2) + '%' : '0%';
+            };
+
+            document.getElementById('bulk-avg-payout-per-run').innerText = formatAccountingMoney(sumPayoutPerRun / n);
+            document.getElementById('bulk-avg-net-per-run').innerText = formatAccountingMoney(sumNetPerRun / n);
+            document.getElementById('bulk-pct-0').innerText = pct(c0);
+            document.getElementById('bulk-pct-1').innerText = pct(c1);
+            document.getElementById('bulk-pct-2').innerText = pct(c2);
+            document.getElementById('bulk-pct-3plus').innerText = pct(c3p);
+
+            if(lastAccounts) {
+                updateUI(lastAccounts);
+            }
+        }
+
+        function runHeatmapCell(runs, pt, sl) {
+            const expenses = readExpenseTotalFromForm();
+            let totalNet = 0;
+            for (let r = 0; r < runs; r++) {
+                const accounts = runSimulationCore({ pt: pt, sl: sl });
+                let runPayout = 0;
+                for (let a = 0; a < accounts.length; a++) {
+                    const plist = accounts[a].payouts || [];
+                    for (let j = 0; j < plist.length; j++) runPayout += plist[j].amount;
+                }
+                totalNet += (runPayout - expenses);
+            }
+            return totalNet / runs;
+        }
+
+        function getHeatmapColor(value, maxAbs) {
+            const ratio = maxAbs === 0 ? 0 : Math.abs(value) / maxAbs;
+            if (value > 0) {
+                const r = Math.round(255 - (255 - 34) * ratio);
+                const g = Math.round(255 - (255 - 197) * ratio);
+                const b = Math.round(255 - (255 - 94) * ratio);
+                return `rgb(${r}, ${g}, ${b})`;
+            } else if (value < 0) {
+                const r = Math.round(255 - (255 - 239) * ratio);
+                const g = Math.round(255 - (255 - 68) * ratio);
+                const b = Math.round(255 - (255 - 68) * ratio);
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+            return 'rgb(255, 255, 255)';
+        }
+
+        function generateHeatmap() {
+            const slMin = parseFloat(document.getElementById('hm-sl-min').value);
+            const slMax = parseFloat(document.getElementById('hm-sl-max').value);
+            const slStep = parseFloat(document.getElementById('hm-sl-step').value);
+
+            const ptMin = parseFloat(document.getElementById('hm-pt-min').value);
+            const ptMax = parseFloat(document.getElementById('hm-pt-max').value);
+            const ptStep = parseFloat(document.getElementById('hm-pt-step').value);
+
+            let runs = parseInt(document.getElementById('bulk-run-count').value, 10);
+            if (!runs || runs < 1) runs = 100;
+
+            const container = document.getElementById('heatmap-container');
+            container.innerHTML = '<p class="text-sm font-semibold text-emerald-600 animate-pulse py-4">Crunching simulations... this may take a few seconds.</p>';
+
+            setTimeout(() => {
+                const slValues = [];
+                for (let v = slMin; v <= slMax; v += slStep) slValues.push(v);
+                
+                const ptValues = [];
+                for (let v = ptMax; v >= ptMin; v -= ptStep) ptValues.push(v);
+
+                let maxAbsNet = 0;
+                const results = [];
+
+                for (let i = 0; i < ptValues.length; i++) {
+                    const row = [];
+                    const pt = ptValues[i];
+                    for (let j = 0; j < slValues.length; j++) {
+                        const sl = slValues[j];
+                        const netPnL = runHeatmapCell(runs, pt, sl);
+                        row.push(netPnL);
+                        if (Math.abs(netPnL) > maxAbsNet) {
+                            maxAbsNet = Math.abs(netPnL);
+                        }
+                    }
+                    results.push(row);
+                }
+
+                let html = `<div style="display: grid; gap: 4px; grid-template-columns: 50px repeat(${slValues.length}, minmax(45px, 1fr));">`;
+                
+                html += `<div class="flex items-center justify-center font-bold text-gray-500 text-[9px] leading-tight text-center bg-gray-50 rounded">PT \\ SL</div>`;
+                for (let sl of slValues) {
+                    html += `<div class="flex items-center justify-center font-bold text-gray-700 bg-gray-100 rounded py-1.5 text-xs shadow-sm">${sl}</div>`;
+                }
+
+                for (let i = 0; i < ptValues.length; i++) {
+                    const pt = ptValues[i];
+                    html += `<div class="flex items-center justify-center font-bold text-gray-700 bg-gray-100 rounded text-xs shadow-sm">${pt}</div>`;
+                    for (let j = 0; j < slValues.length; j++) {
+                        const sl = slValues[j];
+                        const net = results[i][j];
+                        const color = getHeatmapColor(net, maxAbsNet);
+                        const title = `SL: $${sl} | PT: $${pt} \nNet: $${net.toFixed(2)}`;
+                        const textColor = Math.abs(net) / maxAbsNet > 0.55 ? 'text-white' : 'text-gray-900';
+                        
+                        html += `<div title="${title}" style="background-color: ${color};" class="flex items-center justify-center rounded py-2 ${textColor} text-xs font-semibold cursor-crosshair transition-transform hover:scale-[1.15] shadow-sm border border-black/5 z-10 hover:z-20">
+                            $${Math.round(net)}
+                        </div>`;
+                    }
+                }
+                
+                html += `</div>`;
+                container.innerHTML = html;
+            }, 50);
+        }
+
+        function updateUI(accounts) {
+            let surviving = 0;
+            let blown = 0;
+            let totalPnl = 0;
+
+            accounts.forEach(acc => {
+                if(acc.isActive) surviving++; else blown++;
+                totalPnl += acc.balance;
+            });
+
+            document.getElementById('stat-surviving').innerText = surviving;
+            document.getElementById('stat-blown').innerText = blown;
+            document.getElementById('stat-pnl').innerText = `$${totalPnl.toLocaleString()}`;
+
+            lastSimAccounts = accounts;
+            updateSimulationPayoutAccounting(accounts);
+
+            renderChart(accounts);
+        }
+
+        function renderChart(accounts) {
+            const ctx = document.getElementById('simChart').getContext('2d');
+
+            if(simChart) simChart.destroy();
+
+            const datasets = [];
+
+            accounts.forEach(acc => {
+                datasets.push({ label: `Acc ${acc.id} Equity`, data: acc.history, borderColor: acc.color, backgroundColor: acc.color, borderWidth: 2, tension: 0, pointRadius: 4, pointHoverRadius: 6 });
+                datasets.push({ label: `Acc ${acc.id} MFE Peak`, data: acc.history.map(h => ({x: h.x, y: h.peak})), borderColor: '#22c55e88', backgroundColor: '#22c55e', borderWidth: 1.5, borderDash: [2, 4], tension: 0, pointStyle: 'triangle', pointRadius: 4 });
+                datasets.push({ label: `Acc ${acc.id} MAE Trough`, data: acc.history.map(h => ({x: h.x, y: h.trough})), borderColor: '#ef444488', backgroundColor: '#ef4444', borderWidth: 1.5, borderDash: [2, 4], tension: 0, pointStyle: 'rect', pointRadius: 4 });
+                datasets.push({ label: `Acc ${acc.id} Trailing Stop`, data: acc.history.map(h => ({x: h.x, y: h.stop})), borderColor: acc.color + '66', borderWidth: 1.5, borderDash: [5, 5], tension: 0, pointRadius: 0, fill: false });
+
+                if(acc.blownAt) {
+                    datasets.push({ label: `Acc ${acc.id} Blown`, data: [acc.blownAt], backgroundColor: '#dc2626', borderColor: '#991b1b', borderWidth: 2, pointRadius: 8, pointStyle: 'circle', showLine: false });
+                }
+
+                if(acc.payouts && acc.payouts.length) {
+                    datasets.push({ label: `Acc ${acc.id} Payout`, data: acc.payouts.map(p => ({ x: p.x, y: p.yBefore, payoutAmt: p.amount, yAfter: p.yAfter })), backgroundColor: '#fbbf24', borderColor: '#b45309', borderWidth: 2, pointRadius: 9, pointStyle: 'rectRot', showLine: false });
+                }
+            });
+
+            datasets.push({ label: 'Breakeven', data: [{x: 0, y: 0}, {x: parseInt(document.getElementById('totalTrades').value), y: 0}], borderColor: '#9ca3af', borderWidth: 1, pointRadius: 0, fill: false, tension: 0 });
+
+            const chartOptions = {
+                type: 'line',
+                data: { datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: function(items) {
+                                    if(!items.length) return '';
+                                    const d = items[0].parsed.x;
+                                    const s = Number.isFinite(d) ? d.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '';
+                                    return 'Day ' + s;
+                                },
+                                label: function(context) {
+                                    if(context.dataset.label === 'Breakeven') return null;
+                                    const raw = context.raw;
+                                    if(context.dataset.label && context.dataset.label.endsWith('Payout')) {
+                                        const amt = raw.payoutAmt;
+                                        return `Payout −$${(Number.isFinite(amt) ? amt : 0).toFixed(2)} → $${raw.yAfter.toFixed(2)}`;
+                                    }
+                                    return `${context.dataset.label}: $${raw.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { type: 'linear', title: { display: true, text: 'Days', align: 'center', color: '#6b7280', font: {size: 11} }, grid: { color: '#f3f4f6' } },
+                        y: { title: { display: true, text: 'PnL', align: 'center', color: '#6b7280', font: {size: 11} }, grid: { color: '#f3f4f6' } }
+                    }
+                }
+            };
+
+            simChart = new Chart(ctx, chartOptions);
+        }
+
+        window.onload = function() {
+            updateProfileSelect();
+            runSimulation();
+        };
+
+        (function accountingExpensesOnly() {
+            const ids = ['accounting-eval-qty', 'accounting-eval-price', 'accounting-funded-qty', 'accounting-funded-price'];
+            function readNonNeg(id) { const v = parseFloat(document.getElementById(id).value); return Number.isFinite(v) && v > 0 ? v : 0; }
+            function readNonNegInt(id) { const v = parseInt(document.getElementById(id).value, 10); return Number.isFinite(v) && v > 0 ? v : 0; }
+            function updateAccountingTotals() {
+                const evalTotal = readNonNegInt('accounting-eval-qty') * readNonNeg('accounting-eval-price');
+                const fundedTotal = readNonNegInt('accounting-funded-qty') * readNonNeg('accounting-funded-price');
+                const total = evalTotal + fundedTotal;
+                document.getElementById('accounting-eval-subtotal').innerText = formatAccountingMoney(evalTotal);
+                document.getElementById('accounting-funded-subtotal').innerText = formatAccountingMoney(fundedTotal);
+                document.getElementById('accounting-total-expenses').innerText = formatAccountingMoney(total);
+                updateSimulationPayoutAccounting(lastSimAccounts);
+            }
+            ids.forEach(function(id) { document.getElementById(id).addEventListener('input', updateAccountingTotals); });
+            updateAccountingTotals();
+        })();
+    </script>
+</body>
+</html>

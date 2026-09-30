@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aggregated Options Dashboard | Henry Stefanac</title>
+<meta name="description" content="C++ options Time &amp; Sale feed streaming over 600,000 options series, aggregated into premium and delta-adjusted notional flow.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Henry Stefanac">
+<meta property="og:title" content="Aggregated Options Dashboard">
+<meta property="og:description" content="C++ options Time &amp; Sale feed streaming over 600,000 options series, aggregated into premium and delta-adjusted notional flow.">
+<meta property="og:url" content="https://henrystefanac.github.io/options-dashboard/">
+<meta property="og:image" content="https://i.ytimg.com/vi/Dyf4AgnJJXM/maxresdefault.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="/assets/js/site.js" defer></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href="/"><span class="mark">HS</span>Henry Stefanac</a>
+    <nav class="site-nav">
+      <a href="/fair-value/">Case Study</a>
+      <a href="/options-dashboard/">Options Dashboard</a>
+      <a href="/order-flow-dom/">Order-Flow DOM</a>
+    </nav>
+    <div class="contact">
+      <a href="mailto:henrystefanac1@gmail.com">Email</a>
+      <a href="https://www.linkedin.com/in/henrystefanac">LinkedIn</a>
+    </div>
+  </div>
+</header>
+
+<main class="stacked">
+
+  <div class="page-hero">
+    <div class="container">
+      <p class="crumbs"><a href="/">Home</a> / Aggregated Options Dashboard</p>
+      <div class="page-hero-grid">
+        <div>
+          <h1>Aggregated Options Dashboard</h1>
+          <p class="lede">A live options Time &amp; Sale feed for every listed series across index, ETF, futures and all equities within SPY/QQQ, aggregated into premium and delta-adjusted notional flow for custom grouping.</p>
+          <ul class="tags">
+            <li>C++17</li>
+            <li>Direct3D 11</li>
+            <li>Tastytrade dxLink</li>
+          </ul>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="num">&gt;600,000 series</span><span class="label">options series streamed live</span></div>
+          <div class="stat"><span class="num">1.25M topics</span><span class="label">subscribed across 5 WebSocket connections</span></div>
+          <div class="stat"><span class="num">13.3M prints</span><span class="label">recorded in one session and replayable tick for tick</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="subnav" aria-label="On this page"><div class="container"></div></nav>
+
+  <section class="media-block">
+    <div class="container">
+      <figure>
+        <div class="video">
+          <iframe src="https://www.youtube-nocookie.com/embed/Dyf4AgnJJXM?rel=0" title="Aggregated Options Dashboard demo" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <figcaption>A walkthrough of a live session showcasing dxLink connectivity and the Options Flow dashboard.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <div class="container content">
+
+    <section class="row" id="universe">
+      <header><h2>What It Streams</h2></header>
+      <div class="body">
+        <p>Every option print carries the series' live Greeks.</p>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Group</th><th>Underlyings</th><th>Subscribed</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Futures</td><td>ES, MES, NQ, MNQ, YM, MYM, RTY, M2K, VX</td><td>Time &amp; Sale on all available contracts</td></tr>
+              <tr><td>Futures options</td><td>ES, MES, NQ, MNQ, RTY</td><td>Time &amp; Sale + Greeks per series</td></tr>
+              <tr><td>Index options</td><td>SPX, NDX, DJX, RUT, VIX</td><td>Time &amp; Sale + Greeks per series</td></tr>
+              <tr><td>ETF options</td><td>SPY, QQQ, DIA, IWM</td><td>Time &amp; Sale + Greeks per series</td></tr>
+              <tr><td>Equity options</td><td>Top ~350 of the 518 equities within SPY/QQQ</td><td>Time &amp; Sale + Greeks per series</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">*The equity list is rebuilt from the current S&amp;P 500 and Nasdaq-100 constituents at every launch, ordered by market cap.</p>
+
+        <h3>Print Data:</h3>
+        <ul>
+          <li><strong>Pure Time &amp; Sale.</strong> Every print carries its aggressor side, print type and whether it was a spread leg, so a session can be reviewed later</li>
+          <li><strong>Filtered.</strong> Prints with an UNDEFINED aggressor or unknown type are left out of the flow. CANCEL and CORRECTION prints reverse exactly what the original print added</li>
+          <li><strong>Diagnostics.</strong> Running counts of CANCEL, CORRECTION, unknown-type and UNDEFINED-aggressor prints, plus feed lag between dxLink time and machine time at p50 and p99</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="row" id="subscribing">
+      <header><h2>How It Subscribes</h2></header>
+      <div class="body">
+        <p>The feed is built around the account's streaming limits, which I measured before building it.</p>
+
+        <h3>Limits:</h3>
+        <ul>
+          <li><strong>Capacity.</strong> 5 WebSocket connections &times; 10 channels &times; 25,000 topics per channel = 1.25M topics</li>
+          <li><strong>Cost.</strong> Each options series takes 2 topics: Time &amp; Sale and Greeks. Each underlying takes 2 more: Trade for an accurate spot price and Quote for bid/ask</li>
+        </ul>
+
+        <h3>Subscribing:</h3>
+        <ul>
+          <li><strong>Split.</strong> Series are hashed across the connections, so each carries a near-equal share of both series and ticks</li>
+          <li><strong>Pacing.</strong> Every channel has its own rate limiter. At about 850 topics per second in total, a full load takes over 20 minutes</li>
+          <li><strong>Verification.</strong> A chain turns green only when every series in it has been accepted</li>
+        </ul>
+
+        <h3>Each Print:</h3>
+        <ul>
+          <li><strong>Parse.</strong> Decoded with simdjson on the receiving connection's thread</li>
+          <li><strong>Join.</strong> Tagged with the underlying's current price, the series' latest Greeks and, for futures options, the contract month it is written on</li>
+          <li><strong>Publish.</strong> Sent to a shared-memory ring read by the Options Flow page, the tape windows and the ES/NQ chart, and archived to disk</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="row" id="flow">
+      <header><h2>The Options Flow Page</h2></header>
+      <div class="body">
+        <p>Each display aggregates the underlyings named in its title into three cumulative dollar curves on one time axis.</p>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Pane</th><th>Calculation</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Net premium flow</td><td>price &times; contracts &times; multiplier</td></tr>
+              <tr><td>Net delta-adjusted notional flow</td><td>spot &times; |delta| &times; contracts &times; multiplier</td></tr>
+              <tr><td>Net delta-adjusted notional held</td><td>|net contracts held| &times; |current delta| &times; spot &times; multiplier, re-marked every 250 ms</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">*The first two value each print when it trades, from its Time &amp; Sale and Greeks data. The third tracks net contracts held per series and multiplies by the current delta, which can give a more accurate read on moneyness as spot moves.</p>
+
+        <h3>Sign Convention:</h3>
+        <p class="formula">net = (call buys &minus; call sells) &minus; (put buys &minus; put sells)</p>
+        <p>Buying calls and selling puts both count as bullish. Buy and sell come from each print's aggressor side.</p>
+      </div>
+    </section>
+
+    <section class="row" id="replay">
+      <header><h2>Recording and Replay</h2></header>
+      <div class="body">
+        <p>Everything the screens depend on is recorded, so any session can be replayed through the same windows and the same analytics.</p>
+        <ul>
+          <li><strong>Recorded.</strong> Every print, underlying quote, Greeks change and per-second connection health. About 10 GB of total recorded history for a full-day session</li>
+          <li><strong>Integrity.</strong> Each second is marked complete, late or incomplete, and the replay timeline is colored by it</li>
+          <li><strong>Playback.</strong> 0.05&times; to 100&times; speed with scrubbing, keeping the recorded timing between prints</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="row" id="rest">
+      <header><h2>The Rest of the Program</h2></header>
+      <div class="body">
+        <h3>Tape Windows:</h3>
+        <p>Five live consoles: Futures, Futures Options, Index Options, ETF Options and Equity Options. Each option line shows price, size, aggressor side, spot, lag and the series' Greeks.</p>
+
+        <h3>ES/NQ Chart:</h3>
+        <p>Front-month ES and NQ prices at 60 fps, drawn from the same feed.</p>      </div>
+    </section>
+
+    <div class="page-foot">
+      <a class="next-link" href="/order-flow-dom/"><small>Next</small>Futures DOM &amp; Constituent Order Flow &rarr;</a>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>&copy; 2026 Henry Stefanac</span>
+    <nav>
+      <a href="#">Back to top &uarr;</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>

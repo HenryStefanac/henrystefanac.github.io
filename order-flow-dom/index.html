@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Futures DOM &amp; Constituent Order Flow | Henry Stefanac</title>
+<meta name="description" content="C++ futures chart coloring ES and NQ prints by S&amp;P 500 and Nasdaq-100 constituent order flow.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Henry Stefanac">
+<meta property="og:title" content="Futures DOM &amp; Constituent Order Flow">
+<meta property="og:description" content="C++ futures DOM coloring ES and NQ prints by S&amp;P 500 and Nasdaq-100 constituent order flow.">
+<meta property="og:url" content="https://henrystefanac.github.io/order-flow-dom/">
+<meta property="og:image" content="https://i.ytimg.com/vi/dRT_sTLvEF0/maxresdefault.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="/assets/js/site.js" defer></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href="/"><span class="mark">HS</span>Henry Stefanac</a>
+    <nav class="site-nav">
+      <a href="/fair-value/">Case Study</a>
+      <a href="/options-dashboard/">Options Dashboard</a>
+      <a href="/order-flow-dom/">Order-Flow DOM</a>
+    </nav>
+    <div class="contact">
+      <a href="mailto:henrystefanac1@gmail.com">Email</a>
+      <a href="https://www.linkedin.com/in/henrystefanac">LinkedIn</a>
+    </div>
+  </div>
+</header>
+
+<main class="stacked">
+
+  <div class="page-hero">
+    <div class="container">
+      <p class="crumbs"><a href="/">Home</a> / Futures DOM &amp; Constituent Order Flow</p>
+      <div class="page-hero-grid">
+        <div>
+          <h1>Futures DOM &amp; Constituent Order Flow</h1>
+          <p class="lede">A futures DOM and order-book heatmap that colors every ES and NQ print by whether the S&amp;P 500 and Nasdaq-100 constituents were buyer- or seller-aggressive at that moment.</p>
+          <ul class="tags">
+            <li>C++14</li>
+            <li>Direct3D 11</li>
+            <li>Sierra Chart Denali Feed</li>
+          </ul>
+        </div>
+        <div class="stats stats-2">
+          <div class="stat"><span class="num">518 &rarr; 1</span><span class="label">constituent order flows compressed into one color per print</span></div>
+          <div class="stat"><span class="num">Custom DOM layout</span><span class="label">order book, tape, cash-basket breadth and pivots compressed into one eye scan</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="subnav" aria-label="On this page"><div class="container"></div></nav>
+
+  <section class="media-block">
+    <div class="container">
+      <figure>
+        <div class="video">
+          <iframe src="https://www.youtube-nocookie.com/embed/dRT_sTLvEF0?rel=0" title="Futures DOM &amp; Constituent Order Flow demo" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <figcaption>A live recording of the ES and NQ DOMs side by side. The order book and cumulative delta aggregate mini and micro contracts in real time. The heatmap shows pulling, stacking and large outlier resting limits. The price bar coloring shows whether the cash underlyings are buyer- or seller-aggressive.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <div class="container content">
+
+    <section class="row" id="s2">
+      <header><h2>Designed Like an Instrument Scan</h2></header>
+      <div class="body">
+        <p>The layout is based on my flight training. Instrument scanning is a core FAA subject: there is a correct and an incorrect way to move your eyes across the panel, and I believe the same applies to a trading screen.</p>
+        <p>The goal is to take in the most information in the least time, with the least eye movement.</p>
+
+        <h3>Scan Order:</h3>
+        <ol>
+          <li><strong>DOM market-order columns.</strong> The primary instrument. Incoming market orders read as bar length rather than raw numbers</li>
+          <li><strong>Heatmap beside the DOM.</strong> Just outside the market-order columns is the nearest pulling and stacking of limit orders. This narrow strip gives the most immediate read on order flow</li>
+          <li><strong>Right of the DOM: pivots profile.</strong> Unbroken highs and lows and how long they've held. The 3-second bars cover only a few minutes; the profile combines every unbroken high and low into a single column</li>
+          <li><strong>Left of the DOM: forming bar.</strong> Its color is the current read on the cash basket</li>
+          <li><strong>Farther left, scanned less often.</strong> The history of price action, the order-book heatmap and the basket coloring</li>
+          <li><strong>Below.</strong> Cumulative delta, with mini-only volume bars behind it</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="row" id="s3">
+      <header><h2>How the Price Bar Colors Are Computed</h2></header>
+      <div class="body">
+        <p>Each price bar is colored by a breadth score from &minus;1 to +1, recomputed several times a second from the order flow of the stocks in the index.</p>
+
+        <h3>Inputs:</h3>
+        <ul>
+          <li><strong>Constituents.</strong> The 503 S&amp;P 500 stocks for ES and the 101 Nasdaq-100 stocks for NQ</li>
+          <li><strong>Window.</strong> Each stock's trades over the last 0.8 seconds</li>
+          <li><strong>Net aggressor volume.</strong> Market buys &minus; market sells</li>
+        </ul>
+
+        <h3>The Vote:</h3>
+        <ul>
+          <li><strong>Direction.</strong> Each stock votes +1 if its net aggressor volume was positive (buyers more aggressive) or &minus;1 if it was negative (sellers more aggressive)</li>
+          <li><strong>Weight.</strong> Each vote is scaled by the stock's index weight</li>
+          <li><strong>No vote.</strong> A stock with no net buying or selling, or no price change, in the window is left out</li>
+        </ul>
+        <p class="formula">score = &Sigma;(weight &times; vote) / &Sigma;(weight of stocks that voted)</p>
+
+        <h3>Why Votes Instead of Volume:</h3>
+        <p>This is a deliberate tradeoff. Weighting by volume would let a few heavily traded megacaps drown out everything else. An equal vote for every stock would go too far the other way, giving the smallest constituent as much say as the largest. An index-weighted vote sits between the two: every stock that trades counts, and the megacaps count for more.</p>
+
+        <h3>Reading the Score:</h3>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Score</th><th>Share of voting weight</th><th>Color</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="num">+1.0</td><td>100% net buying</td><td><span class="swatch" style="background:rgb(30,210,95)"></span>Full green</td></tr>
+              <tr><td class="num">+0.5</td><td>75% buying, 25% selling</td><td><span class="swatch" style="background:rgb(50,140,88)"></span>Muted green</td></tr>
+              <tr><td class="num">0</td><td>Evenly split</td><td><span class="swatch" style="background:rgb(70,70,82)"></span>Grey</td></tr>
+              <tr><td class="num">&minus;0.5</td><td>25% buying, 75% selling</td><td><span class="swatch" style="background:rgb(149,64,70)"></span>Muted red</td></tr>
+              <tr><td class="num">&minus;1.0</td><td>100% net selling</td><td><span class="swatch" style="background:rgb(228,58,58)"></span>Full red</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">*Colors blend linearly between these points.</p>
+      </div>
+    </section>
+
+    <section class="row" id="pivots">
+      <header><h2>How the Pivots Heatmap Works</h2></header>
+      <div class="body">
+        <p>A profile of every price where a high or low formed and hasn't been broken since, one tick per row.</p>
+
+        <h3>Pivot Bars:</h3>
+        <ul>
+          <li><strong>Bars.</strong> Price is grouped into 100 ms bars. A window with no trades or quotes produces no bar and is skipped</li>
+          <li><strong>Order.</strong> A bar's high has order <em>n</em> if the <em>n</em> bars on each side all have highs at or below it. Lows work the same way, mirrored</li>
+          <li><strong>Ties.</strong> Equal highs don't end the count. Only a strictly higher high (or strictly lower low) does</li>
+          <li><strong>Unbroken.</strong> A pivot high is removed the moment any later bar trades above it, and a pivot low the moment one trades below it. Levels drop out only by being broken, never by age</li>
+        </ul>
+
+        <h3>Two Columns:</h3>
+        <ul>
+          <li><strong>Count (teal).</strong> Each unbroken pivot adds +1 to its price. This is the number of 100 ms tests the level has held</li>
+          <li><strong>Order sum (green).</strong> Independent of count. How long the price has stood as an unbroken high or low</li>
+        </ul>
+        <p class="table-note">*Brightness in each column is relative: value over that column's on-screen max, square-root scaled.</p>
+      </div>
+    </section>
+
+    <section class="row" id="s4">
+      <header><h2>The Rest of the Chart</h2></header>
+      <div class="body">
+        <h3>Order-Book Heatmap:</h3>
+        <p>GPU-rendered. Resting size at every price over time, colored relative to the median resting size, so stacking, pulling and outlier resting orders stand out.</p>
+
+        <h3>DOM:</h3>
+        <p>Current limit orders in the book, plus market-order volume at each price. Mini and micro contracts are aggregated, with micros weighted at 1/10.</p>
+
+        <h3>Cumulative Delta:</h3>
+        <p>Mini and micro contracts aggregated. The volume bars behind it are minis only, not aggregated.</p>
+      </div>
+    </section>
+
+    <section class="row" id="s5">
+      <header><h2>Next Steps</h2></header>
+      <div class="body">
+        <p>The project is still in development and is used alongside the <a href="/options-dashboard/">Aggregated Options Dashboard</a>. The two run on separate computers and record different data.</p>
+        <ul>
+          <li><strong>Collect.</strong> Record enough days of data from both projects to support meaningful backtests</li>
+          <li><strong>Merge.</strong> Combine the two datasets into one</li>
+          <li><strong>Analyze.</strong> Use the combined data as the basis for a new project focused on finding market insights</li>
+        </ul>
+      </div>
+    </section>
+
+    <div class="page-foot">
+      <a class="next-link" href="/fair-value/"><small>Next</small>Pricing Evaluation Accounts as Options &rarr;</a>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>&copy; 2026 Henry Stefanac</span>
+    <nav>
+      <a href="#">Back to top &uarr;</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>

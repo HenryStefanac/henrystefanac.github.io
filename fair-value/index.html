@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing Evaluation Accounts as Options | Henry Stefanac</title>
+<meta name="description" content="Case study: pricing evaluation accounts as options with Monte Carlo simulation. $6.8k in fees returned $32.4k in payouts.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Henry Stefanac">
+<meta property="og:title" content="Advantage Play: Pricing Evaluation Accounts as Options">
+<meta property="og:description" content="Case study: pricing evaluation accounts as options with Monte Carlo simulation. $6.8k in fees returned $32.4k in payouts.">
+<meta property="og:url" content="https://henrystefanac.github.io/fair-value/">
+<meta property="og:image" content="https://henrystefanac.github.io/assets/img/advantage-play.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="/assets/js/site.js" defer></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href="/"><span class="mark">HS</span>Henry Stefanac</a>
+    <nav class="site-nav">
+      <a href="/fair-value/">Case Study</a>
+      <a href="/options-dashboard/">Options Dashboard</a>
+      <a href="/order-flow-dom/">Order-Flow DOM</a>
+    </nav>
+    <div class="contact">
+      <a href="mailto:henrystefanac1@gmail.com">Email</a>
+      <a href="https://www.linkedin.com/in/henrystefanac">LinkedIn</a>
+    </div>
+  </div>
+</header>
+
+<main class="stacked">
+
+  <div class="page-hero">
+    <div class="container">
+      <p class="crumbs"><a href="/">Home</a> / Pricing Evaluation Accounts as Options</p>
+      <div class="page-hero-grid">
+        <div>
+          <h1>Pricing Evaluation Accounts as Options</h1>
+          <p class="lede">Advantage Play &ndash; Independent quantitative project &middot; Nov 2025 &ndash; Apr 2026</p>
+          <ul class="tags">
+            <li>HTML / CSS / JavaScript</li>
+            <li>Monte Carlo Simulation</li>
+            <li>Contract &amp; Rulebook Analysis</li>
+          </ul>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="num">$6.8k &rarr; $32.4k</span><span class="label">fees paid &rarr; payouts received</span></div>
+          <div class="stat"><span class="num">128 evaluations &middot; 47 funded accounts</span></div>
+          <div class="stat"><span class="num">Trading &asymp; 0 EV</span><span class="label">payouts came from pricing, not trade selection</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="subnav" aria-label="On this page"><div class="container"></div></nav>
+
+  <div class="container content">
+
+    <section class="row" id="question">
+      <header><h2>Question &amp; Research</h2></header>
+      <div class="body">
+        <h3>Question:</h3>
+        <p>Are evaluation companies' accounts priced below the fair value of the leverage being sold?</p>
+
+        <h3>Research:</h3>
+        <p>Evaluation companies market themselves to retail traders as "prop firms," which is the term behind the search trend below. <strong>They sell a paid test</strong>: you pay a fee for a simulated account with a set drawdown amount. If you hit the profit target without breaching the trailing drawdown, you move to a "funded" account, where you can request payouts once you pass a set profit threshold. If you breach the drawdown, the account is gone and you've lost only the fee.</p>
+        <p><strong>That's the shape of an option</strong>: a fixed cost, a capped downside, and an upside you can collect.</p>
+
+        <figure>
+          <div class="trends-embed" id="trends-prop-firm"></div>
+          <script src="https://ssl.gstatic.com/trends_nrtr/4564_RC01/embed_loader.js"></script>
+          <script>
+            trends.embed.renderExploreWidgetTo(
+              document.getElementById('trends-prop-firm'),
+              'TIMESERIES',
+              { comparisonItem: [{ keyword: 'prop firm', geo: 'US', time: 'today 5-y' }], category: 0, property: '' },
+              { exploreQuery: 'q=prop%20firm&date=today%205-y&geo=US', guestPath: 'https://trends.google.com:443/trends/embed/' }
+            );
+          </script>
+          <figcaption>Bloomberg reported in Dec 2025 that more than 400 companies now sell these challenges, up from about 10 five years earlier. More companies competing for the same customers means pressure to cut prices, and my hypothesis was that pricing had gone below fair value. My project and its payouts took place at the peak of "prop firm" searches.</figcaption>
+        </figure>
+
+        <h3>Profit Structure of Evaluation Companies:</h3>
+        <p>These companies earn most of their revenue from fees, not from trading. Customers pay for evaluations, and most fail. That fee revenue funds payouts to the small share who reach a funded account and qualify.</p>
+        <p>Funded accounts are typically simulated: orders don't reach the market, so payouts come from the company's own revenue, not from trading profits. Topstep's own 2025 statistics show that only <strong>0.71%</strong> of its funded traders were moved to a live account.</p>
+        <p><strong>The business model is a casino's</strong>: fees are priced so that total fee revenue exceeds total payouts, and the house wins on average. The customers these companies want are the ones who fail. A customer who is paid out consistently is a cost, and a company can limit that cost by changing its rules or ending the relationship.</p>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="split-section" id="hypothesis">
+    <div class="container content">
+      <div class="row">
+        <header><h2>Hypothesis &amp; Model</h2></header>
+        <div class="body">
+          <h3>Hypothesis:</h3>
+          <p>If the expected fees spent to get an account to its payout threshold are less than the expected payout value it produces, then the account structure has positive expected value.</p>
+
+          <h3>How an Account Maps to an Option:</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Account feature</th><th>Option equivalent</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Account balance</td><td><strong>S</strong> &ndash; Spot</td></tr>
+                <tr><td>Evaluation and activation fees</td><td><strong>P</strong> &ndash; Premium</td></tr>
+                <tr><td>Trailing drawdown</td><td><strong>B</strong> &ndash; Knock-out barrier</td></tr>
+                <tr><td>Profit needed to qualify for a payout</td><td><strong>K</strong> &ndash; Strike</td></tr>
+                <tr><td>Payout amount</td><td><strong>C</strong> &ndash; Capped payoff</td></tr>
+                <tr><td>What the account is actually worth</td><td><strong>V</strong> &ndash; Fair value</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note">*The most you can lose on an account is its fees. The upside is paid in fixed chunks once the account qualifies.</p>
+
+          <h3>Model:</h3>
+          <p>I built a Monte Carlo simulator that models a funded account's lifecycle, complete with Apex Trader Funding's specific parameters at the time.</p>
+          <ul>
+            <li>Simulates trades with zero expected value before commissions</li>
+            <li>Applies the company's actual rules: intraday trailing drawdown, trailing cap, commissions, payout thresholds, winning-day rules</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="band">
+      <div class="container">
+        <div class="band-head">
+          <h3>The simulator below can model every company's ruleset I tested. All parameters are adjustable.</h3>
+          <a class="btn" href="/fair-value/simulator/">Open full screen &#8599;</a>
+        </div>
+        <div class="sim-guide">
+          <div class="card">
+            <p>Use <strong>Select Profile</strong> (top left) to load one of three presets:</p>
+            <ul>
+              <li><strong>0 EV:</strong> a visual display of the program's zero-expectancy trading.</li>
+              <li><strong>Run 1</strong> and <strong>Run 2:</strong> the exact account rules, payout rules, and expenses from each of my live runs.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <ul>
+              <li>Lower <strong>Accounts</strong> to get a better look at how the rules affect each account.</li>
+              <li><strong>Run Monte Carlo Simulation</strong> (top right) runs the simulation the entered number of times. A very high value may make the page stop responding.</li>
+              <li><strong>Generate Heatmap</strong> (bottom right) tests every take-profit / stop-loss combination and shows which values maximize expected value under the current account rules.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="phone-only muted">The simulator needs a larger screen. Open this page on a computer to use it.</p>
+        <p class="sim-topnote">*Run 1 and Run 2 are shown separately because the company changed its rules partway through, and the trade had to be re-evaluated. In practice it was one continuous trade: I scaled in as far as the company would let me, for as long as it would let me.</p>
+      </div>
+      <iframe class="sim-embed" src="/fair-value/simulator/" title="Evaluation account Monte Carlo simulator" loading="lazy"></iframe>
+      <p class="sim-note container">*<strong>Total <em>trading</em> P&amp;L</strong> is often negative, while Run 1 and Run 2 produce positive payout results.</p>
+    </div>
+
+    <div class="container content">
+      <div class="row cont">
+        <div></div>
+        <div class="body">
+          <h3>What the Model Predicted:</h3>
+          <p>I simulated each run's exact rules and fees 10,000 times.</p>
+          <p>The $600 take profit and $700 stop loss were chosen based on the highest estimated expectancy in the heatmap.</p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th></th><th class="num">Run 1</th><th class="num">Run 2</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Funded accounts</td><td class="num">29</td><td class="num">20</td></tr>
+                <tr><td>Fees (realized)*</td><td class="num">$3,554.00</td><td class="num">$3,226.20</td></tr>
+                <tr class="strong-row"><td>Expected gross payouts</td><td class="num">$21.7k</td><td class="num">$15.0k</td></tr>
+                <tr class="group-row"><td colspan="3">Accounts by number of payouts</td></tr>
+                <tr><td class="indent">0</td><td class="num">82%</td><td class="num">79%</td></tr>
+                <tr><td class="indent">1</td><td class="num">10%</td><td class="num">10%</td></tr>
+                <tr><td class="indent">2</td><td class="num">4%</td><td class="num">5%</td></tr>
+                <tr><td class="indent">3+</td><td class="num">5%</td><td class="num">7%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note">*Fees are what I actually paid during the experiment, not model estimates.</p>
+          <p>If I could keep my fees below the expected gross payouts, I would be in the money (ITM).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container content">
+
+    <section class="row" id="experiment">
+      <header><h2>Experiment</h2></header>
+      <div class="body">
+        <h3>Run 1 &middot; Accounts Bought Jan 30 &ndash; Feb 27, 2026</h3>
+        <ul>
+          <li>70 evaluations at $19.70 and 29 funded accounts at $75, for $3,554.00 in fees</li>
+        </ul>
+
+        <h3>Run 2 &middot; Accounts Bought Apr 1 &ndash; Apr 11, 2026</h3>
+        <ul>
+          <li>58 evaluations at $24.90 and 18 funded accounts at $99, for $3,226.20 in fees, plus 2 accounts carried over from Run 1</li>
+        </ul>
+        <p class="table-note">*The runs overlap because it takes weeks to scale in and out of accounts. They're split by the rule and price change, not by a clean end date.</p>
+
+        <div class="chart-pair">
+          <figure class="chart-fig">
+            <div class="chart-box">
+              <div class="chart-head">
+                <p class="chart-title">Run 1 &middot; All Trades, Cumulative P&amp;L</p>
+                <button type="button" class="switch" id="toggle-commissions" role="switch" aria-checked="true">
+                  <span class="switch-track"><span class="switch-thumb"></span></span>Commissions
+                </button>
+              </div>
+              <div class="chart-legend">
+                <span><i class="key key-line"></i>Cumulative P&amp;L</span>
+                <span class="legend-fit"><i class="key key-dash"></i>&minus;$3.98 per contract (0 EV)</span>
+              </div>
+              <div class="chart-canvas"><canvas id="chart-contracts" aria-label="Cumulative P&amp;L of all 1,644 run 1 contracts, with or without commissions"></canvas></div>
+            </div>
+          </figure>
+
+          <figure class="chart-fig">
+            <div class="chart-box">
+              <div class="chart-head">
+                <p class="chart-title">Run 1 &middot; Every Funded Account: Payouts and Blowups</p>
+                <span class="chart-count"><i class="key key-diamond"></i>14 payouts</span>
+              </div>
+              <div class="chart-legend">
+                <span><i class="key key-line key-muted"></i>Blown account</span>
+                <span><i class="key key-line key-alive"></i>Surviving account</span>
+                <span><i class="key key-diamond"></i>Payout</span>
+                <span><i class="key key-dot"></i>Blown</span>
+              </div>
+              <div class="chart-canvas"><canvas id="chart-accounts" aria-label="P&amp;L path of each of the 29 run 1 funded accounts by contract number, with payouts and blowups marked"></canvas></div>
+            </div>
+          </figure>
+        </div>
+
+        <p class="table-note">*Run 2's trades weren't recorded. I placed them from my phone with a fixed take profit and stop loss, choosing direction on a literal coin flip, while working full-time night shifts. It didn't need to be perfect; the window was closing and I needed to act on it.</p>
+      </div>
+    </section>
+
+    <section class="row" id="analysis">
+      <header><h2>Analysis</h2></header>
+      <div class="body">
+        <h3>Results:</h3>
+        <p><strong>The trading itself had no edge, as designed.</strong> The results came from the accounts that survived long enough to pay out, while each account that failed cost only its fee.</p>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th></th><th class="num">Run 1</th><th class="num">Run 2</th><th class="num">Total</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Fees paid</td><td class="num">$3,554.00</td><td class="num">$3,226.20</td><td class="num">$6,780.20</td></tr>
+              <tr><td>Evaluations &rarr; funded</td><td class="num">70 &rarr; 29 (41%)</td><td class="num">58 &rarr; 18 (31%)</td><td class="num">128 &rarr; 47 (37%)</td></tr>
+              <tr class="group-row"><td colspan="4">Accounts by number of payouts</td></tr>
+              <tr><td class="indent">1</td><td class="num">5</td><td class="num">6</td><td class="num">11</td></tr>
+              <tr><td class="indent">2</td><td class="num">3</td><td class="num">0</td><td class="num">3</td></tr>
+              <tr><td class="indent">3</td><td class="num">1</td><td class="num">0</td><td class="num">1</td></tr>
+              <tr><td>Payouts received</td><td class="num">$20,417.00</td><td class="num">$12,000.00</td><td class="num">$32,417.00</td></tr>
+              <tr><td>Net</td><td class="num">$16,863.00</td><td class="num">$8,773.80</td><td class="num">$25,636.80</td></tr>
+              <tr class="strong-row"><td>Return on fees</td><td class="num">474.48%</td><td class="num">271.95%</td><td class="num">378.11%</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="chart-pair chart-pair-short">
+          <figure class="chart-fig">
+            <div class="chart-box">
+              <p class="chart-title">Gross Payouts: Model vs. Actual</p>
+              <div class="chart-legend">
+                <span><i class="key key-sq key-model"></i>Model (expected)</span>
+                <span><i class="key key-sq key-actual"></i>Actual</span>
+              </div>
+              <div class="chart-canvas"><canvas id="chart-pva-payouts" aria-label="Expected versus actual gross payouts for run 1 and run 2"></canvas></div>
+            </div>
+          </figure>
+
+          <figure class="chart-fig">
+            <div class="chart-box">
+              <p class="chart-title">Accounts by Number of Payouts: Model vs. Actual</p>
+              <div class="chart-legend">
+                <span><i class="key key-sq key-p0"></i>0 payouts</span>
+                <span><i class="key key-sq key-p1"></i>1</span>
+                <span><i class="key key-sq key-p2"></i>2</span>
+                <span><i class="key key-sq key-p3"></i>3+</span>
+              </div>
+              <div class="chart-canvas"><canvas id="chart-pva-dist" aria-label="Share of accounts reaching 0, 1, 2 and 3 or more payouts, model versus actual, for run 1 and run 2"></canvas></div>
+            </div>
+          </figure>
+        </div>
+        <p class="chart-caption">Actual payouts averaged 87% of the model's predictions. In both runs, about 70% of accounts never paid out, against roughly 80% expected.</p>
+
+        <p>I attribute the variation to three main factors:</p>
+        <ul>
+          <li><strong>Market-order entries, especially at night.</strong> The spread on NQ overnight is much wider than during the day, so a market entry had slightly worse odds than the model assumed</li>
+          <li><strong>Stop losses are market orders too.</strong> They trigger on Rithmic's servers, and some filled with large slippage</li>
+          <li><strong>Rithmic and personal internet outages.</strong> At the height of evaluation-company popularity, Rithmic went down frequently. Several trades lost far more than should have been permitted, like the &minus;$3,800 outlier in the Experiment charts</li>
+        </ul>
+
+        <h3>Rule Changes between Runs:</h3>
+        <p>Between the two runs, the company <strong>raised its prices and cut its payouts</strong>. That's consistent with the company noticing it was priced under fair value, and with the window of opportunity closing.</p>
+
+        <h3>How It Ended:</h3>
+        <p>Midway through Run 2, many of my accounts were still in the money when the company "upgraded" me to a live-funded account. That's a polite way of declining further business. I had worked within its stated rules the whole time, which is why I was promoted rather than banned. I declined the live account, took my payouts, and the project ended. A final $3,000 payment arrived about three months later.</p>
+      </div>
+    </section>
+
+    <section class="row" id="conclusion">
+      <header><h2>Conclusion</h2></header>
+      <div class="body">
+        <p><strong>The hypothesis held.</strong> Across 128 evaluations, trading with no market edge still produced $32.4k in payouts on $6.8k of fees, because the accounts were priced below the value of the payout options they carried.</p>
+        <p>I watched the edge shrink in real time. Over a matter of weeks, the company's rules changed and brought its accounts closer to fair value. This company and many others like it have since strengthened their contracts and pricing to prevent what this project did.</p>
+
+        <h3>What I Took from It:</h3>
+        <ul>
+          <li>There will always be uncontrollable factors in modeling; here it was counterparty risk, with my accounts closed and "promoted to live"</li>
+          <li>I had to decide to accept small bugs and missing validation in order to pursue the project in a timely manner</li>
+          <li>Pricing inefficiencies close, so the first version that's right enough beats a perfect one that's late</li>
+        </ul>
+
+        <h3>What I Could Have Done Better:</h3>
+        <ul>
+          <li>Automated limit-order entries from a more stable connection</li>
+          <li>Logged every trade with more detailed accounting</li>
+          <li>Built expected expenses into the model</li>
+        </ul>
+
+        <h3>Potential Next Steps:</h3>
+        <ul>
+          <li>Implement the option-like structure of evaluation accounts into an overall portfolio</li>
+          <li>Automate screening of popular evaluation companies' rules to identify mispricings faster</li>
+          <li>Identify other retail products that may follow a similar structure</li>
+        </ul>
+      </div>
+    </section>
+
+    <div class="page-foot">
+      <p class="note">*Figures come from my account records, payout history, and bank deposits, available upon request.</p>
+      <a class="next-link" href="/options-dashboard/"><small>Next</small>Aggregated Options Dashboard &rarr;</a>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>&copy; 2026 Henry Stefanac</span>
+    <nav>
+      <a href="#">Back to top &uarr;</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="/assets/js/apex-charts.js"></script>
+
+</body>
+</html>
